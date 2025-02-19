@@ -13,20 +13,17 @@ public class DuckLangRe {
     private static final String WEBBED_FEET = "-?[0-9]+";
 
     // Decimal (Duck Pond Depth - Floating-point numbers)
-    private static final String DUCK_POND_DEPTH = "-?[0-9]+\\.[0-9]{1,5}";
+    private static final String DUCK_POND_DEPTH = "[0-9]+[\\.0-9]*";
 
     // Character (Feather Code - Single Letter in Quotes)
-    private static final String FEATHER_CODE = "'[a-zA-Z0-9]'";
+    private static final String FEATHER_CODE = "[a-zA-Z0-9]";
 
     // Arithmetic Operations (Duck Math)
-    private static final String DUCK_MATH = "[+\\-*/%]|\\^";
+    private static final String DUCK_MATH = "ADD|MIN|MUL";
 
     // Constants (Eggs - Immutable Values)
-    private static final String DUCK_GLOBAL = "Nest_Egg\\s+" + DUCK_ID;  // Global constants
+    private static final String DUCK_GLOBAL = "Nest_Egg+" + DUCK_ID;  // Global constants
     private static final String DUCK_LOCAL = DUCK_ID; // Local constants
-
-    // Strings (Duck Song - Text Enclosed in Quotes)
-    private static final String DUCK_SONG = "\"([^\"\\\\](\\\\.[^\"\\\\])*)\"";
 
     // Comments (Quack Notes)
     private static final String DUCK_COMMENT_SINGLE = "~QUACK.*";  // Single-line comments
@@ -36,7 +33,7 @@ public class DuckLangRe {
     private static final String DUCK_WHITESPACE = "\\s+";
 
     // Keywords (Control Statements, I/O, etc.)
-    private static final String DUCK_KEYWORD = "\\b(QUACK_PRINT|QUACK_INPUT|Duck_If|Duck_Else|Duck_While|Duck_For|Duck_Return|Duck_Break|Duck_Continue)\\b";
+    private static final String DUCK_KEYWORD = "\\b(QUACK_PRINT|QUACK_INPUT)\\b";
     public static boolean testNFA(NFA nfa, String input) {
         Set<State> currentStates = new HashSet<>();
         epsilonClosure(nfa.start, currentStates);
@@ -72,11 +69,11 @@ public class DuckLangRe {
 
 
     public static void main(String[] args) {
-        String regex = "[a-z]+"; // Example regex for DUCK_ID
+       String regex = "[a-z]+"; // Example regex for DUCK_ID
         ThompsonConstruction tc = new ThompsonConstruction();
         NFA nfa = tc.reToNFA(regex);
         System.out.println("NFA construction completed.");
-        tc.printNFA(nfa);
+        //tc.printNFA(nfa);
 
         // Test the NFA with some input
         String input = "bcd";
@@ -84,22 +81,47 @@ public class DuckLangRe {
         System.out.println("Input '" + input + "' matches regex: " + result);
         ThompsonConstruction tc1 = new ThompsonConstruction();
         String input1 = "QUACK_QUACK";
-        String input2 = "123";
-        String input3 = "QUACK"; // Invalid
-        NFA duckBoolNFA = tc1.reToNFA(DUCK_BOOL);
-        tc1.printNFA(duckBoolNFA);
+        String input3 = "Quaak"; // Invalid
+       NFA duckBoolNFA = tc1.reToNFA(DUCK_BOOL);
+        //tc1.printNFA(duckBoolNFA);
         System.out.println("Input '" + input1 + "' matches: " + testNFA(duckBoolNFA, input1));
-        System.out.println("Input '" + input2 + "' matches: " + testNFA(duckBoolNFA, input2));
         System.out.println("Input '" + input3 + "' matches: " + testNFA(duckBoolNFA, input3));
 
         ThompsonConstruction thompson = new ThompsonConstruction();
         NFA webbedfeet = tc1.reToNFA(WEBBED_FEET);
-
-        System.out.println("NFA for '-?[0-9]+':");
-        thompson.printNFA(nfa);
-        String input4 = "ABC123"; // Invalid
-        tc1.printNFA(webbedfeet);
+        //thompson.printNFA(nfa);
+        String input4 = "1"; // Invalid
+        //tc1.printNFA(webbedfeet);
         System.out.println("Input '" + input4 + "' matches: " + testNFA(webbedfeet, input4));
 
+        NFA dd = tc1.reToNFA(DUCK_POND_DEPTH);
+
+        //tc1.printNFA(dd);
+        String input5 = "11"; // Invalid
+        //tc1.printNFA(dd);
+        System.out.println("Input '" + input5 + "' matches: " + testNFA(dd, input5));
+
+        NFA chartype = tc1.reToNFA(FEATHER_CODE);
+        //tc1.printNFA(chartype);
+        String input6 = "1"; // Valid input, should match
+        //tc1.printNFA(chartype);
+        System.out.println("Input '" + input6 + "' matches: " + testNFA(chartype, input6));
+
+
+        NFA op = tc1.reToNFA(DUCK_GLOBAL);
+        //tc1.printNFA(op);
+        String input7 = "Nest_Egg Quack_123"; // Valid input, should match
+        //tc1.printNFA(chartype);
+        System.out.println("Input '" + input7 + "' matches: " + testNFA(op, input7));
+        NFA ops = tc1.reToNFA(DUCK_LOCAL);
+        //tc1.printNFA(op);
+        String input8 = "Quack_123"; // Valid input, should match
+        //tc1.printNFA(chartype);
+        System.out.println("Input '" + input8 + "' matches: " + testNFA(ops, input8));
+        NFA prints = tc1.reToNFA(DUCK_MATH);
+        //tc1.printNFA(op);
+        String input9 = "ADD"; // Valid input, should match
+        tc1.printNFA(chartype);
+        System.out.println("Input '" + input9 + "' matches: " + testNFA(prints, input8));
     }
 }

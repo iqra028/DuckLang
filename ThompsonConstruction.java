@@ -4,7 +4,17 @@ public class ThompsonConstruction {
 
     private int stateCount = 0;
     private Stack<NFA> stack = new Stack<>();
+    private NFA createWildcardNFA() {
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+        State middle = new State(stateCount++, '.'); // Representing any character
 
+        start.addTransition(middle);
+        middle.addTransition(end);
+        end.isFinal = true;
+
+        return new NFA(start, end);
+    }
     public NFA reToNFA(String regex) {
         String trimmedRegex = regex.trim();
         stack.clear(); // Clear the stack before processing a new regex
@@ -34,11 +44,50 @@ public class ThompsonConstruction {
             } else if (c == '[') {
                 // Handle character class
                 i = handleCharacterClass(trimmedRegex, i);
-            } else if (c == ' ') {
-                // Ignore spaces in regex unless explicitly needed
-                continue;
+            } else if (c == '-') {
+                // Handle optional `-` using the `applyOptional` method
+                stack.push(createBasicNFA('-'));
+                applyOptional();
+                i=i+2;
+            }else if (c == '\\') {
+                System.out.println("iiiiicameeeeehereeeeee");
+
+                // Handle wildcard character
+                i++;
+                c = trimmedRegex.charAt(i);
+                NFA escapedNFA = createBasicNFA(c);
+                stack.push(escapedNFA);
+            }else if (c == '.') {
+                // Handle wildcard character
+                NFA wildcardNFA = createWildcardNFA();
+                stack.push(wildcardNFA);
+            }
+            else if (c >= '0' && c <= '9') {
+                // Handle `[0-9]+` dynamically
+                State start = new State(stateCount++, 'ε'); // Start state
+                State end = new State(stateCount++, 'ε');   // End state
+                end.isFinal = true;
+
+                // Create transitions for all digits (0-9)
+                for (char digit = '0'; digit <= '9'; digit++) {
+                    State digitState = new State(stateCount++, digit);
+                    digitState.addTransition(end);
+                    start.addTransition(digitState);
+                }
+
+                // Push `[0-9]` NFA to the stack
+                NFA digitNFA = new NFA(start, end);
+                stack.push(digitNFA);
+
+                // Handle `+` dynamically
+                applyKleeneStar(); // Apply `*` to `[0-9]`
+                NFA kleeneStarNFA = stack.pop(); // Get the `[0-9]*` NFA
+
+                stack.push(digitNFA);  // Push `[0-9]`
+                stack.push(kleeneStarNFA); // Push `[0-9]*`
+                applyConcatenation(); // Combine `[0-9]` and `[0-9]*` to form `[0-9]+`
             } else {
-                // Create a basic NFA for the character
+                // Create a basic NFA for any other character
                 NFA charNFA = createBasicNFA(c);
 
                 // If there's a previous NFA, concatenate it with the new one
@@ -62,7 +111,8 @@ public class ThompsonConstruction {
         while (localUnionStack.size() > 1) {
             NFA nfa2 = localUnionStack.pop();
             NFA nfa1 = localUnionStack.pop();
-            applyUnion(nfa1, nfa2);
+            NFA unionNFA = applyUnion(nfa1, nfa2);
+            localUnionStack.push(unionNFA);
         }
 
         // If there's still one NFA left in the local stack, push it to the main stack
@@ -78,7 +128,8 @@ public class ThompsonConstruction {
         return stack.isEmpty() ? null : stack.pop();
     }
 
-    private void applyUnion(NFA nfa1, NFA nfa2) {
+
+    private NFA applyUnion(NFA nfa1, NFA nfa2) {
         State start = new State(stateCount++, 'ε');
         State end = new State(stateCount++, 'ε');
 
@@ -91,34 +142,44 @@ public class ThompsonConstruction {
         nfa2.end.isFinal = false;
         end.isFinal = true;
 
-        stack.push(new NFA(start, end));
+        return new NFA(start, end);
     }
+
+
 
 
     private int handleCharacterClass(String regex, int index) {
         index++; // Move past '['
-        char startChar = regex.charAt(index);
-        index += 2; // Skip '-'
-        char endChar = regex.charAt(index);
-        index++; // Move past ']'
-
         State start = new State(stateCount++, 'ε'); // Start state
         State end = new State(stateCount++, 'ε');   // Final state
         end.isFinal = true; // Mark end state as final
 
-        for (char c = startChar; c <= endChar; c++) {
-            State charState = new State(stateCount++, c);
-            charState.addTransition(end); // Each character state transitions to the final state
-            if(charState!=start)
-            {
-                charState.isFinal=true;
+        while (regex.charAt(index) != ']') {
+            char startChar = regex.charAt(index);
+
+            if (index + 2 < regex.length() && regex.charAt(index + 1) == '-') {
+                // Handle range like a-z
+                char endChar = regex.charAt(index + 2);
+                for (char c = startChar; c <= endChar; c++) {
+                    State charState = new State(stateCount++, c);
+                    charState.addTransition(end);
+                    start.addTransition(charState);
+                }
+                index += 3; // Move past 'startChar-endChar'
+            } else {
+                // Handle single character
+                State charState = new State(stateCount++, startChar);
+                charState.addTransition(end);
+                start.addTransition(charState);
+                index++; // Move past the single character
             }
-            start.nextStates.add(charState); // Add transition from start to each character state
         }
 
         stack.push(new NFA(start, end)); // Push the new NFA to the stack
         return index;
     }
+
+
 
 
 
@@ -130,25 +191,9 @@ public class ThompsonConstruction {
 
         start.addTransition(middle);
         middle.addTransition(end);
-        end.isFinal = true;
+        end.isFinal = true; // Ensure the end state is marked as final
 
         return new NFA(start, end);
-    }
-    public NFA createDuckBoolNFA() {
-        NFA quackQuackNFA = reToNFA("QUACK QUACK");
-        NFA quaakNFA = reToNFA("Quaak");
-
-        // Ensure NFAs are valid before pushing to stack
-        if (quackQuackNFA != null) stack.push(quackQuackNFA);
-        if (quaakNFA != null) stack.push(quaakNFA);
-
-        // Ensure the stack has at least two NFAs before applying union
-        if (stack.size() < 2) {
-            throw new IllegalStateException("Not enough NFAs for union");
-        }
-
-        applyUnion();
-        return stack.pop();
     }
 
 
@@ -233,5 +278,19 @@ public class ThompsonConstruction {
             }
         }
     }
+    private void applyOptional() {
+        NFA nfa = stack.pop();
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+        start.addTransition(nfa.start); // Transition to the NFA
+        start.addTransition(end);      // Transition to skip the NFA
+        nfa.end.addTransition(end);
+
+        nfa.end.isFinal = false;
+        end.isFinal = true;
+
+        stack.push(new NFA(start, end));
+    }
+
 
 }
