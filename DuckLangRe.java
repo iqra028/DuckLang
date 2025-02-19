@@ -7,7 +7,7 @@ public class DuckLangRe {
     private static final String DUCK_ID = "[a-z]+";
 
     // Boolean (QUACK QUACK for true, Quaak for false)
-    private static final String DUCK_BOOL = "QUACK QUACK|Quaak";
+    private static final String DUCK_BOOL = "QUACK_QUACK|Quaak";
 
     // Integer (Webbed Feet Count - Whole Numbers)
     private static final String WEBBED_FEET = "-?[0-9]+";
@@ -79,10 +79,18 @@ public class DuckLangRe {
         tc.printNFA(nfa);
 
         // Test the NFA with some input
-        String input = "abc";
+        String input = "bcd";
         boolean result = testNFA(nfa, input);
         System.out.println("Input '" + input + "' matches regex: " + result);
-
+        ThompsonConstruction tc1 = new ThompsonConstruction();
+        String input1 = "QUACK_QUACK";
+        String input2 = "Quaak";
+        String input3 = "QUACK"; // Invalid
+        NFA duckBoolNFA = tc1.reToNFA(DUCK_BOOL);
+        tc1.printNFA(duckBoolNFA);
+        System.out.println("Input '" + input1 + "' matches: " + testNFA(duckBoolNFA, input1));
+        System.out.println("Input '" + input2 + "' matches: " + testNFA(duckBoolNFA, input2));
+        System.out.println("Input '" + input3 + "' matches: " + testNFA(duckBoolNFA, input3));
 
 
     }

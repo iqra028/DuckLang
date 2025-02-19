@@ -6,24 +6,94 @@ public class ThompsonConstruction {
     private Stack<NFA> stack = new Stack<>();
 
     public NFA reToNFA(String regex) {
-        for (int i = 0; i < regex.length(); i++) {
-            char c = regex.charAt(i);
-            if (c == '*') {
-                if (!stack.isEmpty()) applyKleeneStar();
-            } else if (c == '|') {
-                if (stack.size() > 1) applyUnion();
-            } else if (c == '.') {
-                if (stack.size() > 1) applyConcatenation();
+        String trimmedRegex = regex.trim();
+        stack.clear(); // Clear the stack before processing a new regex
+
+        Stack<NFA> localUnionStack = new Stack<>(); // Local stack for union operations
+        NFA prevNFA = null; // Keep track of the previous NFA for concatenation
+
+        for (int i = 0; i < trimmedRegex.length(); i++) {
+            char c = trimmedRegex.charAt(i);
+
+            if (c == '|') {
+                // Handle union operator
+                if (prevNFA != null) {
+                    localUnionStack.push(prevNFA); // Push the previous NFA to the local stack
+                    prevNFA = null; // Reset prevNFA for the next NFA
+                }
+            } else if (c == '*') {
+                // Handle Kleene star
+                if (!stack.isEmpty()) {
+                    applyKleeneStar();
+                }
             } else if (c == '+') {
-                if (!stack.isEmpty()) applyPlusOperator();
+                // Handle plus operator
+                if (!stack.isEmpty()) {
+                    applyPlusOperator();
+                }
             } else if (c == '[') {
-                i = handleCharacterClass(regex, i);
+                // Handle character class
+                i = handleCharacterClass(trimmedRegex, i);
+            } else if (c == ' ') {
+                // Ignore spaces in regex unless explicitly needed
+                continue;
             } else {
-                stack.push(createBasicNFA(c));
+                // Create a basic NFA for the character
+                NFA charNFA = createBasicNFA(c);
+
+                // If there's a previous NFA, concatenate it with the new one
+                if (prevNFA != null) {
+                    stack.push(prevNFA);
+                    stack.push(charNFA);
+                    applyConcatenation();
+                    prevNFA = stack.pop(); // Store the result for further concatenation
+                } else {
+                    prevNFA = charNFA;
+                }
             }
         }
-        return stack.pop();
+
+        // Push the last concatenated NFA onto the stack if necessary
+        if (prevNFA != null) {
+            localUnionStack.push(prevNFA);
+        }
+
+        // After processing the entire regex, apply any remaining unions
+        while (localUnionStack.size() > 1) {
+            NFA nfa2 = localUnionStack.pop();
+            NFA nfa1 = localUnionStack.pop();
+            applyUnion(nfa1, nfa2);
+        }
+
+        // If there's still one NFA left in the local stack, push it to the main stack
+        if (!localUnionStack.isEmpty()) {
+            stack.push(localUnionStack.pop());
+        }
+
+        // After processing the entire regex, apply any remaining concatenations
+        while (stack.size() > 1) {
+            applyConcatenation();
+        }
+
+        return stack.isEmpty() ? null : stack.pop();
     }
+
+    private void applyUnion(NFA nfa1, NFA nfa2) {
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+
+        start.addTransition(nfa1.start);
+        start.addTransition(nfa2.start);
+        nfa1.end.addTransition(end);
+        nfa2.end.addTransition(end);
+
+        nfa1.end.isFinal = false;
+        nfa2.end.isFinal = false;
+        end.isFinal = true;
+
+        stack.push(new NFA(start, end));
+    }
+
 
     private int handleCharacterClass(String regex, int index) {
         index++; // Move past '['
@@ -64,6 +134,25 @@ public class ThompsonConstruction {
 
         return new NFA(start, end);
     }
+    public NFA createDuckBoolNFA() {
+        NFA quackQuackNFA = reToNFA("QUACK QUACK");
+        NFA quaakNFA = reToNFA("Quaak");
+
+        // Ensure NFAs are valid before pushing to stack
+        if (quackQuackNFA != null) stack.push(quackQuackNFA);
+        if (quaakNFA != null) stack.push(quaakNFA);
+
+        // Ensure the stack has at least two NFAs before applying union
+        if (stack.size() < 2) {
+            throw new IllegalStateException("Not enough NFAs for union");
+        }
+
+        applyUnion();
+        return stack.pop();
+    }
+
+
+
 
     private void applyConcatenation() {
         NFA nfa2 = stack.pop();
