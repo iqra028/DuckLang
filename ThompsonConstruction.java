@@ -1,125 +1,148 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class ThompsonConstruction {
+
     private int stateCount = 0;
     private Stack<NFA> stack = new Stack<>();
-    private List<Integer> unionPositions = new ArrayList<>();
-    private List<NFA> nfaList = new ArrayList<>();
 
-    private State createState() {
-        State state = new State(stateCount++);
-        return state;
-    }
     public NFA reToNFA(String regex) {
         for (int i = 0; i < regex.length(); i++) {
             char c = regex.charAt(i);
-            switch (c) {
-                case '*':
-                    if (stack.isEmpty()) {
-                        throw new IllegalArgumentException("Invalid regex: no NFA to apply Kleene star.");
-                    }
-                    applyKleeneStar();
-                    break;
-                case '|':
-                    // Push a special marker onto the stack to indicate the union operator
-                    stack.push(null);
-                    break;
-                default:
-                    // Create an NFA for the single character and push it onto the stack
-                    stack.push(singleCharNFA(c));
-                    break;
-            }
-        }
-
-        // Process the stack to handle unions and concatenations
-        Stack<NFA> tempStack = new Stack<>();
-        while (!stack.isEmpty()) {
-            NFA nfa = stack.pop();
-            if (nfa == null) {
-                // Union operator encountered
-                if (tempStack.size() < 2) {
-                    throw new IllegalArgumentException("Invalid regex: not enough NFAs for union operation.");
-                }
-                NFA rightNFA = tempStack.pop();
-                NFA leftNFA = tempStack.pop();
-                tempStack.push(applyUnion(leftNFA, rightNFA));
+            if (c == '*') {
+                if (!stack.isEmpty()) applyKleeneStar();
+            } else if (c == '|') {
+                if (stack.size() > 1) applyUnion();
+            } else if (c == '.') {
+                if (stack.size() > 1) applyConcatenation();
+            } else if (c == '+') {
+                if (!stack.isEmpty()) applyPlusOperator();
+            } else if (c == '[') {
+                i = handleCharacterClass(regex, i);
             } else {
-                tempStack.push(nfa);
+                stack.push(createBasicNFA(c));
             }
         }
+        return stack.pop();
+    }
 
-        // Apply concatenation to any remaining NFAs on the stack
-        while (tempStack.size() > 1) {
-            NFA rightNFA = tempStack.pop();
-            NFA leftNFA = tempStack.pop();
-            tempStack.push(applyConcatenation(leftNFA, rightNFA));
+    private int handleCharacterClass(String regex, int index) {
+        index++; // Move past '['
+        char startChar = regex.charAt(index);
+        index += 2; // Skip '-'
+        char endChar = regex.charAt(index);
+        index++; // Move past ']'
+
+        State start = new State(stateCount++, 'ε'); // Start state
+        State end = new State(stateCount++, 'ε');   // Final state
+        end.isFinal = true; // Mark end state as final
+
+        for (char c = startChar; c <= endChar; c++) {
+            State charState = new State(stateCount++, c);
+            charState.addTransition(end); // Each character state transitions to the final state
+            if(charState!=start)
+            {
+                charState.isFinal=true;
+            }
+            start.nextStates.add(charState); // Add transition from start to each character state
         }
 
-        // At the end, there should be exactly one NFA left
-        if (tempStack.size() != 1) {
-            throw new IllegalStateException("Invalid regex: stack should contain exactly one NFA at the end.");
-        }
-        return tempStack.pop();
+        stack.push(new NFA(start, end)); // Push the new NFA to the stack
+        return index;
     }
 
-    private NFA singleCharNFA(char c) {
-        State start = createState();
-        State end = createState();
-        start.addTransition(c, end);
-        return new NFA(start, end, Arrays.asList(start, end));
-    }
-    private NFA applyConcatenation(NFA left, NFA right) {
-        // Connect the end of the left NFA to the start of the right NFA
-        left.end.addTransition('\0', right.start);
 
-        // Combine the states of the left and right NFAs
-        List<State> states = new ArrayList<>();
-        states.addAll(left.states);
-        states.addAll(right.states);
 
-        // Return the new concatenated NFA
-        return new NFA(left.start, right.end, states);
+
+    private NFA createBasicNFA(char c) {
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+        State middle = new State(stateCount++, c);
+
+        start.addTransition(middle);
+        middle.addTransition(end);
+        end.isFinal = true;
+
+        return new NFA(start, end);
     }
+
+    private void applyConcatenation() {
+        NFA nfa2 = stack.pop();
+        NFA nfa1 = stack.pop();
+        nfa1.end.addTransition(nfa2.start);
+        nfa1.end.isFinal = false;
+        stack.push(new NFA(nfa1.start, nfa2.end));
+    }
+
+
+    private void applyUnion() {
+        NFA nfa2 = stack.pop();
+        NFA nfa1 = stack.pop();
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+
+        start.addTransition(nfa1.start);
+        start.addTransition(nfa2.start);
+        nfa1.end.addTransition(end);
+        nfa2.end.addTransition(end);
+
+        nfa1.end.isFinal = false;
+        nfa2.end.isFinal = false;
+        end.isFinal = true;
+
+        stack.push(new NFA(start, end));
+    }
+
+
     private void applyKleeneStar() {
-        if (nfaList.isEmpty()) {
-            throw new IllegalArgumentException("Invalid regex: no NFA to apply Kleene star.");
+        NFA nfa = stack.pop();
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+
+        start.addTransition(nfa.start);
+        start.addTransition(end);
+        nfa.end.addTransition(nfa.start);
+        nfa.end.addTransition(end);
+
+        nfa.end.isFinal = false;
+        end.isFinal = true;
+
+        stack.push(new NFA(start, end));
+    }
+
+    private void applyPlusOperator() {
+        NFA nfa = stack.pop();
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
+
+        start.addTransition(nfa.start);
+        nfa.end.addTransition(nfa.start);
+        nfa.end.addTransition(end);
+
+        nfa.end.isFinal = false;
+        end.isFinal = true;
+
+        stack.push(new NFA(start, end));
+    }
+
+    public void printNFA(NFA nfa) {
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+        queue.add(nfa.start);
+
+        while (!queue.isEmpty()) {
+            State state = queue.poll();
+            if (visited.contains(state)) continue;
+            visited.add(state);
+
+            System.out.print("State " + state.id);
+            if (state.isFinal) System.out.print(" (Final)");
+            System.out.println();
+
+            for (State nextState : state.nextStates) { // Iterate over all transitions
+                System.out.println("  -(" + nextState.transition + ")-> State " + nextState.id);
+                queue.add(nextState);
+            }
         }
-        NFA nfa = nfaList.get(nfaList.size() - 1); // Get the last NFA
-        State start = createState();
-        State end = createState();
-
-        // Add epsilon transitions for Kleene star
-        start.addTransition('\0', nfa.start); // Start to NFA start
-        start.addTransition('\0', end);       // Start to end (zero occurrences)
-        nfa.end.addTransition('\0', nfa.start); // NFA end to NFA start (loop)
-        nfa.end.addTransition('\0', end);       // NFA end to end
-
-        // Create the new NFA and replace the old one
-        List<State> states = new ArrayList<>();
-        states.add(start);
-        states.add(end);
-        states.addAll(nfa.states);
-        nfaList.set(nfaList.size() - 1, new NFA(start, end, states));
     }
 
-    private NFA applyUnion(NFA left, NFA right) {
-        State start = createState();
-        State end = createState();
-        start.addTransition('\0', left.start);
-        start.addTransition('\0', right.start);
-        left.end.addTransition('\0', end);
-        right.end.addTransition('\0', end);
-
-        // Combine the states of the left and right NFAs
-        List<State> states = new ArrayList<>();
-        states.add(start);
-        states.add(end);
-        states.addAll(left.states);
-        states.addAll(right.states);
-
-        return new NFA(start, end, states);
-    }
 }
