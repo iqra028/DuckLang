@@ -84,7 +84,7 @@ public class DuckLangRe {
         System.out.println("Input '" + input + "' matches regex: " + result);
         ThompsonConstruction tc1 = new ThompsonConstruction();
         String input1 = "QUACK_QUACK";
-        String input2 = "Quaak";
+        String input2 = "123";
         String input3 = "QUACK"; // Invalid
         NFA duckBoolNFA = tc1.reToNFA(DUCK_BOOL);
         tc1.printNFA(duckBoolNFA);
@@ -92,6 +92,14 @@ public class DuckLangRe {
         System.out.println("Input '" + input2 + "' matches: " + testNFA(duckBoolNFA, input2));
         System.out.println("Input '" + input3 + "' matches: " + testNFA(duckBoolNFA, input3));
 
+        ThompsonConstruction thompson = new ThompsonConstruction();
+        NFA webbedfeet = tc1.reToNFA(WEBBED_FEET);
+
+        System.out.println("NFA for '-?[0-9]+':");
+        thompson.printNFA(nfa);
+        String input4 = "ABC123"; // Invalid
+        tc1.printNFA(webbedfeet);
+        System.out.println("Input '" + input4 + "' matches: " + testNFA(webbedfeet, input4));
 
     }
 }
