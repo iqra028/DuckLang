@@ -1,15 +1,62 @@
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 public class ThompsonConstruction {
     private int stateCount = 0;
     private Stack<NFA> stack = new Stack();
 
     public ThompsonConstruction() {
+    }
+
+    public Map<Integer, Map<Character, Set<Integer>>> createStateTable(NFA nfa) {
+        Map<Integer, Map<Character, Set<Integer>>> table = new HashMap<>();
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+        queue.add(nfa.start);
+
+        while (!queue.isEmpty()) {
+            State currentState = queue.poll();
+            if (visited.contains(currentState)) {
+                continue;
+            }
+            visited.add(currentState);
+
+            Map<Character, Set<Integer>> transitions = new HashMap<>();
+            for (State nextState : currentState.nextStates) {
+                char transitionChar = nextState.transition;
+                transitions.computeIfAbsent(transitionChar, k -> new HashSet<>()).add(nextState.id);
+                queue.add(nextState);
+            }
+            table.put(currentState.id, transitions);
+        }
+        return table;
+    }
+
+    public void printStateTable(Map<Integer, Map<Character, Set<Integer>>> table) {
+        System.out.println("State Table:");
+
+        // 1. Determine all unique input symbols
+        Set<Character> inputSymbols = new TreeSet<>(); // Use TreeSet for sorted output
+        for (Map<Character, Set<Integer>> transitions : table.values()) {
+            inputSymbols.addAll(transitions.keySet());
+        }
+
+        // 2. Print header row
+        System.out.print("State\t\t\t");
+        for (char symbol : inputSymbols) {
+            System.out.print(symbol + "\t\t\t");
+        }
+        System.out.println();
+
+        // 3. Print table rows
+        for (int stateId : new TreeSet<>(table.keySet())) { // Use TreeSet for sorted state IDs
+            System.out.print(stateId + "\t\t\t");
+            Map<Character, Set<Integer>> transitions = table.get(stateId);
+            for (char symbol : inputSymbols) {
+                Set<Integer> nextStates = transitions.getOrDefault(symbol, Collections.emptySet());
+                System.out.print(nextStates + "\t\t\t\t");
+            }
+            System.out.println();
+        }
     }
 
     private NFA createWildcardNFA() {
@@ -27,23 +74,23 @@ public class ThompsonConstruction {
         NFA anyCharNFA = this.createBasicNFAForAnyExcept('}');
         this.stack.push(anyCharNFA);
         this.applyKleeneStar();
-        NFA loopAnyCharNFA = (NFA)this.stack.pop();
+        NFA loopAnyCharNFA = (NFA) this.stack.pop();
         NFA closeBraceNFA = this.createBasicNFA('}');
         this.stack.push(openBraceNFA);
         this.stack.push(closeBraceNFA);
         this.applyConcatenation();
-        NFA multilineCommentNFA = (NFA)this.stack.pop();
+        NFA multilineCommentNFA = (NFA) this.stack.pop();
         this.stack.push(multilineCommentNFA);
         this.stack.push(closeBraceNFA);
         this.applyConcatenation();
-        return (NFA)this.stack.pop();
+        return (NFA) this.stack.pop();
     }
 
     private NFA createBasicNFAForAnyExcept(char excludeChar) {
         State start = new State(this.stateCount++, 'ε');
         State end = new State(this.stateCount++, 'ε');
 
-        for(char c = 0; c < 128; ++c) {
+        for (char c = 0; c < 128; ++c) {
             if (c != excludeChar) {
                 State middle = new State(this.stateCount++, c);
                 start.addTransition(middle);
@@ -60,8 +107,8 @@ public class ThompsonConstruction {
         State end = new State(this.stateCount++, 'ε');
         end.isFinal = true;
 
-        for(char c = 0; c < 128; ++c) {
-            if (c != '\n') {
+        for (char c = 11; c < 128; ++c) {
+            if (c != 10) {
                 State charState = new State(this.stateCount++, c);
                 start.addTransition(charState);
                 charState.addTransition(end);
@@ -73,58 +120,122 @@ public class ThompsonConstruction {
 
     public NFA reToNFA(String regex) {
         String trimmedRegex = regex.trim();
-        this.stack.clear();
-        Stack<NFA> localUnionStack = new Stack();
+        stack.clear();
+        Stack<NFA> localUnionStack = new Stack<>();
         NFA prevNFA = null;
 
-        NFA wildcardNFA;
-        for(int i = 0; i < trimmedRegex.length(); ++i) {
+        for (int i = 0; i < trimmedRegex.length(); ++i) {
             char c = trimmedRegex.charAt(i);
-            if (c == '|') {
+
+            if (trimmedRegex.startsWith("~QUACK", i)) {
+                // Create the NFA for "~QUACK" directly
+                NFA quack = createBasicNFA('~');
+                for (int j = 1; j < "~QUACK".length(); j++) {
+                    NFA nextChar = createBasicNFA("~QUACK".charAt(j));
+                    stack.push(quack);
+                    stack.push(nextChar);
+                    applyConcatenation();
+                    quack = stack.pop();
+                }
+
+                NFA anyUntilNewline = createAnyUntilNewlineNFA();
+                stack.push(anyUntilNewline);
+                applyKleeneStar();
+                NFA anyUntilNewlineKleene = stack.pop();
+                stack.push(quack);
+                stack.push(anyUntilNewlineKleene);
+                applyConcatenation();
+                prevNFA = stack.pop();
+                i += "~QUACK".length() - 1;
+                break;
+            } else if (c == '.') {
+                State start = new State(stateCount++, 'ε');
+                State end = new State(stateCount++, 'ε');
+                end.isFinal = true;
+
+                for (char ch = 0; ch < 128; ++ch) {
+                    State charState = new State(stateCount++, ch);
+                    start.addTransition(charState);
+                    charState.addTransition(end);
+                }
+
+                NFA anyChar = new NFA(start, end);
+                stack.push(anyChar);
+            }
+            else if (c == '*') {
+                if (!stack.isEmpty()) {
+                    applyKleeneStar();
+                }
+            }
+            else if (c == '{') {
+                NFA openBrace = createBasicNFA('{');
+                NFA anyCharExceptCloseBrace = createBasicNFAForAnyExcept('}');
+                stack.push(anyCharExceptCloseBrace);
+                applyKleeneStar();
+                NFA loopAnyChar = stack.pop();
+                NFA closeBrace = createBasicNFA('}');
+                stack.push(openBrace);
+                stack.push(loopAnyChar);
+                applyConcatenation();
+                stack.push(closeBrace);
+                applyConcatenation();
+                prevNFA = stack.pop();
+                int braceCount = 1;
+                i++;
+                while (i < trimmedRegex.length() && braceCount > 0) {
+                    if (trimmedRegex.charAt(i) == '{') {
+                        braceCount++;
+                    } else if (trimmedRegex.charAt(i) == '}') {
+                        braceCount--;
+                    }
+                    i++;
+                }
+                i--;
+            } else if (c == '|') {
                 if (prevNFA != null) {
                     localUnionStack.push(prevNFA);
                     prevNFA = null;
                 }
             } else if (c == '*') {
-                if (!this.stack.isEmpty()) {
-                    this.applyKleeneStar();
+                if (!stack.isEmpty()) {
+                    applyKleeneStar();
                 }
             } else if (c == '+') {
-                if (!this.stack.isEmpty()) {
-                    this.applyPlusOperator();
+                if (!stack.isEmpty()) {
+                    applyPlusOperator();
                 }
             } else if (c == '[') {
-                i = this.handleCharacterClass(trimmedRegex, i);
+                i = handleCharacterClass(trimmedRegex, i);
             } else if (c == '-') {
-                this.stack.push(this.createBasicNFA('-'));
                 if (i + 1 < trimmedRegex.length() && trimmedRegex.charAt(i + 1) == '?') {
-                    this.applyOptional();
-                    i += 2;
+                    stack.push(createBasicNFA('-'));
+                    applyOptional();
+                    i++;
+                } else {
+                    stack.push(createBasicNFA('-'));
                 }
             } else if (c == '\\') {
                 ++i;
-                c = trimmedRegex.charAt(i);
-                wildcardNFA = this.createBasicNFA(c);
-                this.stack.push(wildcardNFA);
+                NFA wildcardNFA = createBasicNFA(trimmedRegex.charAt(i));
+                stack.push(wildcardNFA);
             } else if (c != '.') {
-                wildcardNFA = this.createBasicNFA(c);
+                NFA wildcardNFA = createBasicNFA(c);
                 if (prevNFA != null) {
-                    this.stack.push(prevNFA);
-                    this.stack.push(wildcardNFA);
-                    this.applyConcatenation();
-                    prevNFA = (NFA)this.stack.pop();
+                    stack.push(prevNFA);
+                    stack.push(wildcardNFA);
+                    applyConcatenation();
+                    prevNFA = stack.pop();
                 } else {
                     prevNFA = wildcardNFA;
                 }
             } else if (i + 1 < trimmedRegex.length() && trimmedRegex.charAt(i + 1) == '*') {
-                System.out.println("oooooooooooooooooooooooooooooo");
-                State start = new State(this.stateCount++, 'ε');
-                State end = new State(this.stateCount++, 'ε');
+                State start = new State(stateCount++, 'ε');
+                State end = new State(stateCount++, 'ε');
                 end.isFinal = true;
 
-                for(char ch = 0; ch < 128; ++ch) {
+                for (char ch = 0; ch < 128; ++ch) {
                     if (ch != '\n') {
-                        State charState = new State(this.stateCount++, ch);
+                        State charState = new State(stateCount++, ch);
                         start.addTransition(charState);
                         charState.addTransition(start);
                     }
@@ -132,11 +243,11 @@ public class ThompsonConstruction {
 
                 start.addTransition(end);
                 NFA anyUntilNewlineNFA = new NFA(start, end);
-                this.stack.push(anyUntilNewlineNFA);
+                stack.push(anyUntilNewlineNFA);
                 ++i;
             } else {
-                wildcardNFA = this.createWildcardNFA();
-                this.stack.push(wildcardNFA);
+                NFA wildcardNFA = createWildcardNFA();
+                stack.push(wildcardNFA);
             }
         }
 
@@ -144,30 +255,29 @@ public class ThompsonConstruction {
             localUnionStack.push(prevNFA);
         }
 
-        while(localUnionStack.size() > 1) {
-            NFA nfa2 = (NFA)localUnionStack.pop();
-            NFA nfa1 = (NFA)localUnionStack.pop();
-            wildcardNFA = this.applyUnion(nfa1, nfa2);
-            localUnionStack.push(wildcardNFA);
+        while (localUnionStack.size() > 1) {
+            NFA nfa2 = localUnionStack.pop();
+            NFA nfa1 = localUnionStack.pop();
+            localUnionStack.push(applyUnion(nfa1, nfa2));
         }
 
         if (!localUnionStack.isEmpty()) {
-            this.stack.push((NFA)localUnionStack.pop());
+            stack.push(localUnionStack.pop());
         }
 
-        while(this.stack.size() > 1) {
-            this.applyConcatenation();
+        while (stack.size() > 1) {
+            applyConcatenation();
         }
 
-        if (this.stack.isEmpty()) {
+        if (stack.isEmpty()) {
             System.out.println("No NFA constructed for the regex: " + regex);
             return null;
         } else {
-            return (NFA)this.stack.pop();
+            return stack.pop();
         }
     }
 
-    private NFA applyUnion(NFA nfa1, NFA nfa2) {
+        private NFA applyUnion(NFA nfa1, NFA nfa2) {
         State start = new State(this.stateCount++, 'ε');
         State end = new State(this.stateCount++, 'ε');
         start.addTransition(nfa1.start);
