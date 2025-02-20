@@ -3,15 +3,15 @@ import java.util.*;
 public class DuckLangRe {
     private static final String DUCK_ID = "[a-z]+";
     private static final String DUCK_BOOL = "QUACK_QUACK|Quaak";
-    private static final String WEBBED_FEET = "[0-9]+";
+    private static final String WEBBED_FEET = "-?[0-9]+";
     private static final String DUCK_POND_DEPTH = "[0-9]+[\\.0-9]*";
     private static final String FEATHER_CODE = "[a-zA-Z0-9]";
     private static final String DUCK_MATH = "ADD|SUB|MUL|DIV|MOD|POW";
-    private static final String DUCK_GLOBAL = "[Nest_Egg a-z]+";
+    private static final String DUCK_GLOBAL = "[Nest_Egga-z]+";
     private static final String DUCK_LOCAL = "[a-z]+";
     private static final String DUCK_COMMENT_SINGLE = "~QUACK.*";
     private static final String DUCK_COMMENT_MULTI = "{.*}";
-    private static final String DUCK_KEYWORD = "QUACK_PRINT|QUACK_INPUT";
+    private static final String DUCK_KEYWORD = "QUACK_PRINT|QUACK_INPUT|DUCK_INT|DUCK_BOOL|DUCK_STRING|DUCK_CHAR";
 
     public DuckLangRe() {
     }
@@ -52,145 +52,79 @@ public class DuckLangRe {
 
 
 
+        public static void main(String[] args) {
+            ThompsonConstruction tc = new ThompsonConstruction();
+            SubsetConstructionMethod converter = new SubsetConstructionMethod();
+            DFAminimization minimizer = new DFAminimization();
 
-    public static void main(String[] args) {
-//        String regex = "[a-z]+";
-//        ThompsonConstruction tc = new ThompsonConstruction();
-//        NFA nfa = tc.reToNFA(regex);
-//        Map<Integer, Map<Character, Set<Integer>>> stateTable = tc.createStateTable(nfa);
-//
-//        // Print the state table
-//        tc.printStateTable(stateTable);
-//
-//        System.out.println("NFA construction completed.");
-//        String input = "bcd";
-//        boolean result = testNFA(nfa, input);
-//        System.out.println("Input '" + input + "' matches regex: " + result);
-//        ThompsonConstruction tc1 = new ThompsonConstruction();
-//        new ThompsonConstruction();
-//        NFA webbedfeet = tc1.reToNFA("-?[0-9]+");
-//        Map<Integer, Map<Character, Set<Integer>>> stateTable1 = tc.createStateTable(webbedfeet);
-//
-//        // Print the state table
-//        tc.printStateTable(stateTable1);
-//        String input4 = "-1";
-//        System.out.println("Input '" + input4 + "' matches: " + testNFA(webbedfeet, input4));
-//        NFA dd = tc1.reToNFA("[0-9]+[\\.0-9]*");
-//        String input5 = "1.1";
-//        System.out.println("Input '" + input5 + "' matches: " + testNFA(dd, input5));
-//        NFA chartype = tc1.reToNFA("[a-zA-Z0-9]");
-//        String input6 = "1";
-//        System.out.println("Input '" + input6 + "' matches: " + testNFA(chartype, input6));
-//        NFA op = tc1.reToNFA("[Nest_Egg a-z]+");
-//        String input7 = "Nest_Egg abc";
-//        System.out.println("Input '" + input7 + "' matches: " + testNFA(op, input7));
-//        NFA ops = tc1.reToNFA("[a-z]+");
-//        String input8 = "quack";
-//        System.out.println("Input '" + input8 + "' matches: " + testNFA(ops, input8));
-//        String input1 = "QUACK_QUACK";
-//        String input3 = "Quaak";
-//        NFA duckBoolNFA = tc1.reToNFA("QUACK_QUACK|Quaak");
-//        System.out.println("Input '" + input1 + "' matches: " + testNFA(duckBoolNFA, input1));
-//        System.out.println("Input '" + input3 + "' matches: " + testNFA(duckBoolNFA, input3));
-//        ThompsonConstruction thompsonMethod = new ThompsonConstruction();
-//        NFA nfas = thompsonMethod.reToNFA("ADD|SUB|MUL|DIV|MOD|POW");
-//        String input9 = "POW";
-//        System.out.println("Input '" + input9 + "' matches: " + testNFA(nfas, input9));
-//
-//        NFA reservewords = tc.reToNFA("QUACK_PRINT|QUACK_INPUT");
-//        tc.printNFA(reservewords);
-//        String input11 = "QUACK_PRINT";
-//        System.out.println("Input '" + input11 + "' matches: " + testNFA(reservewords, input11));
-//
-//
-//
-//        NFA singleLineComment = tc.reToNFA("~QUACK.*"); // Corrected regex
-//        System.out.println("Single-line comment NFA:");
-//        tc.printNFA(singleLineComment);
-//        String input10 = "~QUACK  hello its iqra here 123\n";
-//        System.out.println("Input '" + input10 + "' matches: " + testNFA(singleLineComment, input10));
-//        Map<Integer, Map<Character, Set<Integer>>> stateTable2 = tc.createStateTable(singleLineComment);
-//
-//        // Print the state table
-//        tc.printStateTable(stateTable2);
-//        ThompsonConstruction tc2 = new ThompsonConstruction();
-//        NFA singleLineComment1 = tc2.reToNFA("~QUACK.*");
-//        System.out.println("\nTesting single-line comments:");
-//
-//        // Test cases for single-line comments
-//        String[] testCases = {
-//                "~QUACK hello its iqra here 123",           // Should match
-//                "~QUACK",                                   // Should match
-//                "~QUACK hello its iqra here 123\n",        // Should not match
-//                "~QUACK test\nmore text",                  // Should not match
-//        };
-//
-//        for (String test : testCases) {
-//            System.out.println("Result: " + testNFA(singleLineComment1, test));
-//        }
-//
-//        NFA multipleLineComment = tc.reToNFA(DUCK_COMMENT_MULTI); // Corrected regex
-//        System.out.println("Single-line comment NFA:");
-//        tc.printNFA(multipleLineComment);
-//        String input13 = "{helo its iqra here 123 \n what to do}";
-//        System.out.println("Input '" + input13 + "' matches: " + testNFA(multipleLineComment, input13));
-        ThompsonConstruction tc = new ThompsonConstruction();
-        SubsetConstructionMethod converter = new SubsetConstructionMethod();
-        DFAminimization minimizer = new DFAminimization();
+            // Create a map to store the DFAs for each token type
+            Map<TokenType, DFA> tokenDFAs = new HashMap<>();
 
-        // List of regexes from DuckLangRe
-        Map<String, String[]> regexTests = new LinkedHashMap<>();
-        regexTests.put("[a-z]+", new String[]{"duck", "quack", "Abc", "123"}); // DUCK_ID
-        regexTests.put("QUACK_QUACK|Quaak", new String[]{"QUACK_QUACK", "Quaak", "quack", "QUACK"}); // DUCK_BOOL
-        regexTests.put("[0-9]+", new String[]{"123", "0", "42a", "-5"}); // WEBBED_FEET
-        regexTests.put("[0-9]+[\\.0-9]*", new String[]{"3.14", "0.5", "42", "abc"}); // DUCK_POND_DEPTH
-        regexTests.put("[a-zA-Z0-9]", new String[]{"A", "5", "z", "!"}); // FEATHER_CODE
-        regexTests.put("ADD|SUB|MUL|DIV|MOD|POW", new String[]{"ADD", "MUL", "DIV", "MULT"}); // DUCK_MATH
-        regexTests.put("[Nest_Egg a-z]+", new String[]{"Nest_Egg abc", "xyz", "123"}); // DUCK_GLOBAL
-        regexTests.put("~QUACK.*", new String[]{"~QUACK hello", "~QUACK123", "QUACK"}); // DUCK_COMMENT_SINGLE
-        regexTests.put("{.*}", new String[]{"{comment}", "{ multi line }", "{invalid"}); // DUCK_COMMENT_MULTI
-        regexTests.put("QUACK_PRINT|QUACK_INPUT", new String[]{"QUACK_PRINT", "QUACK_INPUT", "PRINT"}); // DUCK_KEYWORD
+            // Map of regex patterns to token types
+            Map<String, TokenType> patterns = new LinkedHashMap<>();
+            patterns.put(DUCK_ID, TokenType.DUCK_ID);
+            patterns.put(DUCK_BOOL, TokenType.DUCK_BOOL);
+            patterns.put(WEBBED_FEET, TokenType.WEBBED_FEET);
+            patterns.put(DUCK_POND_DEPTH, TokenType.DUCK_POND_DEPTH);
+            patterns.put(FEATHER_CODE, TokenType.FEATHER_CODE);
+            patterns.put(DUCK_MATH, TokenType.DUCK_MATH);
+            patterns.put(DUCK_GLOBAL, TokenType.DUCK_GLOBAL);
+            patterns.put(DUCK_COMMENT_SINGLE, TokenType.DUCK_COMMENT_SINGLE);
+            patterns.put(DUCK_COMMENT_MULTI, TokenType.DUCK_COMMENT_MULTI);
+            patterns.put(DUCK_KEYWORD, TokenType.DUCK_KEYWORD);
 
-        for (Map.Entry<String, String[]> entry : regexTests.entrySet()) {
-            String regex = entry.getKey();
-            String[] testInputs = entry.getValue();
+            // Convert each regex to DFA and store in tokenDFAs
+            for (Map.Entry<String, TokenType> entry : patterns.entrySet()) {
+                String regex = entry.getKey();
+                TokenType type = entry.getValue();
 
-            System.out.println("\n=======================================");
-            System.out.println("Testing Regex: " + regex);
-            System.out.println("=======================================");
+                // Convert regex to NFA
+                NFA nfa = tc.reToNFA(regex);
 
-            // Step 1: Convert Regular Expression to NFA
-            NFA nfa = tc.reToNFA(regex);
-            //System.out.println("NFA Created:");
-            //tc.printNFA(nfa);
+                // Convert NFA to DFA
+                DFA dfa = converter.conversion(nfa);
 
-            // Step 2: Convert NFA to DFA
-            DFA dfa = converter.conversion(nfa);
-            //System.out.println("\nConverted DFA:");
-            //converter.printTransitionTable(dfa);
+                // Minimize DFA
+                DFA minimizedDFA = minimizer.minimization(dfa);
 
-            // Step 3: Minimize the DFA
-            DFA minimizedDFA = minimizer.minimization(dfa);
-            //System.out.println("\nMinimized DFA:");
-            //converter.printTransitionTable(minimizedDFA);
-
-            // Step 4: Test inputs on the minimized DFA
-            System.out.println("\nTesting Inputs:");
-            for (String input : testInputs) {
-                boolean result = testDFA(minimizedDFA, input);
-                System.out.println("Input: '" + input + "' → Matches: " + result);
+                // Store the minimized DFA
+                tokenDFAs.put(type, minimizedDFA);
             }
-        }
-    }
-    private static boolean testDFA(DFA dfa, String input) {
-        DFAState currentState = dfa.startState;
-        for (char c : input.toCharArray()) {
-            if (!currentState.transitions.containsKey(c)) {
-                return false;
-            }
-            currentState = currentState.transitions.get(c);
-        }
-        return currentState.isFinal;
-    }
 
+            // Test the lexical analyzer with sample input
+            String testInput = """
+            QUACK_PRINT hello
+            ~QUACK This is a comment
+            Nest_Egg myvar
+            QUACK_QUACK
+            ADD 123 456.789
+            {This is a
+            multiline comment}
+            """;
+
+            System.out.println("Testing Lexical Analyzer with input:\n" + testInput);
+            System.out.println("\nTokenizing...");
+
+            LexicalAnalyzer analyzer = new LexicalAnalyzer(tokenDFAs, testInput);
+            List<Token> tokens = analyzer.analyze();
+
+            System.out.println("\nTokens found:");
+            for (Token token : tokens) {
+                if (token.getType() != TokenType.WHITESPACE) {
+                    System.out.println(token);
+                }
+            }
+
+        }
+
+        private static boolean testDFA(DFA dfa, String input) {
+            DFAState currentState = dfa.startState;
+            for (char c : input.toCharArray()) {
+                if (!currentState.transitions.containsKey(c)) {
+                    return false;
+                }
+                currentState = currentState.transitions.get(c);
+            }
+            return currentState.isFinal;
+        }
 }
