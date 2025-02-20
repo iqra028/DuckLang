@@ -103,13 +103,14 @@ public class ThompsonConstruction {
     }
 
     public NFA createAnyUntilNewlineNFA() {
-        State start = new State(this.stateCount++, 'ε');
-        State end = new State(this.stateCount++, 'ε');
+        State start = new State(stateCount++, 'ε');
+        State end = new State(stateCount++, 'ε');
         end.isFinal = true;
 
-        for (char c = 11; c < 128; ++c) {
-            if (c != 10) {
-                State charState = new State(this.stateCount++, c);
+        // Create transitions for all characters except newline
+        for (char c = 0; c < 128; c++) {
+            if (c != '\n') {
+                State charState = new State(stateCount++, c);
                 start.addTransition(charState);
                 charState.addTransition(end);
             }

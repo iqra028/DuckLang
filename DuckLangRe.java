@@ -15,112 +15,43 @@ public class DuckLangRe {
 
     public DuckLangRe() {
     }
-
+    private static void epsilonClosure(State state, Set<State> states) {
+        if (state != null && !states.contains(state)) {
+            states.add(state);
+            for (State next : state.nextStates) {
+                if (next.transition == 'ε') {
+                    epsilonClosure(next, states);
+                }
+            }
+        }
+    }
     public static boolean testNFA(NFA nfa, String input) {
         Set<State> currentStates = new HashSet<>();
         epsilonClosure(nfa.start, currentStates);
-        char[] var3 = input.toCharArray();
-        int var4 = var3.length;
 
-        for (int var5 = 0; var5 < var4; ++var5) {
-            char c = var3[var5];
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
             Set<State> nextStates = new HashSet<>();
-            Iterator var8 = currentStates.iterator();
 
-            while (var8.hasNext()) {
-                State state = (State) var8.next();
-                Iterator var10 = state.nextStates.iterator();
-
-                while (var10.hasNext()) {
-                    State next = (State) var10.next();
-                    if (next.transition == c || next.transition == '.') { // Handle any character
+            for (State state : currentStates) {
+                for (State next : state.nextStates) {
+                    if (next.transition == c) {
                         epsilonClosure(next, nextStates);
                     }
                 }
             }
 
+            if (nextStates.isEmpty()) {
+                return false;
+            }
             currentStates = nextStates;
         }
 
-        Iterator var12 = currentStates.iterator();
-
-        State state;
-        do {
-            if (!var12.hasNext()) {
-                return false;
-            }
-
-            state = (State) var12.next();
-        } while (!state.isFinal);
-
-        return true;
+        return currentStates.stream().anyMatch(state -> state.isFinal);
     }
 
-    private static void epsilonClosure(State state, Set<State> states) {
-        if (state != null && !states.contains(state)) {
-            states.add(state);
-            Iterator var2 = state.nextStates.iterator();
 
-            while(var2.hasNext()) {
-                State next = (State)var2.next();
-                if (next.transition == 949) {
-                    epsilonClosure(next, states);
-                }
-            }
 
-        }
-    }
-
-    public static boolean simulateNFA(State startState, String input) {
-        List<State> currentStates = new ArrayList();
-        currentStates.add(startState);
-        char[] var3 = input.toCharArray();
-        int var4 = var3.length;
-
-        for(int var5 = 0; var5 < var4; ++var5) {
-            char c = var3[var5];
-            List<State> nextStates = new ArrayList();
-            Iterator var8 = currentStates.iterator();
-
-            label43:
-            while(var8.hasNext()) {
-                State state = (State)var8.next();
-                Iterator var10 = state.nextStates.iterator();
-
-                while(true) {
-                    State nextState;
-                    do {
-                        if (!var10.hasNext()) {
-                            continue label43;
-                        }
-
-                        nextState = (State)var10.next();
-                    } while(nextState.transition != c && nextState.transition != 0);
-
-                    nextStates.add(nextState);
-                }
-            }
-
-            currentStates = nextStates;
-        }
-
-        Iterator var12 = currentStates.iterator();
-
-        State state;
-        do {
-            if (!var12.hasNext()) {
-                return false;
-            }
-
-            state = (State)var12.next();
-        } while(!state.isFinal);
-
-        return true;
-    }
-
-    public static boolean isDuckComment(String line) {
-        return line.trim().startsWith("~QUACK");
-    }
 
     public static void main(String[] args) {
         String regex = "[a-z]+";
@@ -182,11 +113,26 @@ public class DuckLangRe {
 
         // Print the state table
         tc.printStateTable(stateTable2);
+        ThompsonConstruction tc2 = new ThompsonConstruction();
+        NFA singleLineComment1 = tc2.reToNFA("~QUACK.*");
+        System.out.println("\nTesting single-line comments:");
 
-        //NFA multipleLineComment = tc.reToNFA(DUCK_COMMENT_MULTI); // Corrected regex
-        //System.out.println("Single-line comment NFA:");
-        //tc.printNFA(multipleLineComment);
-        //String input13 = "{helo its iqra here 123 \n what to do}";
-        //System.out.println("Input '" + input13 + "' matches: " + testNFA(multipleLineComment, input13));
+        // Test cases for single-line comments
+        String[] testCases = {
+                "~QUACK hello its iqra here 123",           // Should match
+                "~QUACK",                                   // Should match
+                "~QUACK hello its iqra here 123\n",        // Should not match
+                "~QUACK test\nmore text",                  // Should not match
+        };
+
+        for (String test : testCases) {
+            System.out.println("Result: " + testNFA(singleLineComment1, test));
+        }
+
+        NFA multipleLineComment = tc.reToNFA(DUCK_COMMENT_MULTI); // Corrected regex
+        System.out.println("Single-line comment NFA:");
+        tc.printNFA(multipleLineComment);
+        String input13 = "{helo its iqra here 123 \n what to do}";
+        System.out.println("Input '" + input13 + "' matches: " + testNFA(multipleLineComment, input13));
     }
 }
