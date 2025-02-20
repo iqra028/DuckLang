@@ -9,6 +9,7 @@ public class SubsetConstructionMethod {
         Queue<Set<State>> queue =new LinkedList<>();
         List<DFAState> generatedDFAStates=new ArrayList<>();
 
+
         Set<State> startingSet =epsilonClosure(nfa.start);
 
         DFAState DFAstartState =new DFAState(DFAstates.size(),HasFinal(startingSet));
