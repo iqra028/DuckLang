@@ -96,13 +96,13 @@ public class DuckLangRe {
 
             // Test the lexical analyzer with sample input
             String testInput = """
-            DUCK_INT 1
-            DUCK_FLOAT 12.13
+            WEBBED_FEET 1
+            DUCK_POND_DEPTH 12.13
            DUCK_BOOL Quaak
            ADD 123 435
-           Nest_Egg Hello
+           Nest_Egg hh
            QUACK_PRINT hello iqra here 
-           DUCK_CHAR A
+           FEATHER_CODE A
             """;
 
             System.out.println("Testing Lexical Analyzer with input:\n" + testInput);
