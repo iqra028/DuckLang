@@ -11,7 +11,7 @@ public class DuckLangRe {
     private static final String DUCK_LOCAL = "[a-zA-Z0-9]+";
     private static final String DUCK_COMMENT_SINGLE = "~QUACK.*";
     private static final String DUCK_COMMENT_MULTI = "{.*}";
-    private static final String DUCK_KEYWORD = "QUACK_PRINT|QUACK_INPUT|DUCK_INT|DUCK_BOOL|DUCK_FLOAT|DUCK_CHAR";
+    private static final String DUCK_KEYWORD = "QUACK_PRINT|QUACK_INPUT|WEBBED_FEET|DUCK_BOOL|DUCK_POND_DEPTH|FEATHER_CODE";
 
     public DuckLangRe() {
     }
