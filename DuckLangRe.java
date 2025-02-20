@@ -1,17 +1,17 @@
 import java.util.*;
 
 public class DuckLangRe {
-    private static final String DUCK_ID = "[a-z]+";
-    private static final String DUCK_BOOL = "QUACK_QUACK|Quaak";
-    private static final String WEBBED_FEET = "-?[0-9]+";
-    private static final String DUCK_POND_DEPTH = "[0-9]+[\\.0-9]*";
-    private static final String FEATHER_CODE = "[a-zA-Z0-9]";
-    private static final String DUCK_MATH = "ADD|SUB|MUL|DIV|MOD|POW";
-    private static final String DUCK_GLOBAL = "[Nest_Egga-z]+";
-    private static final String DUCK_LOCAL = "[a-z]+";
+    private static final String FEATHER_CODE = "[a-zA-Z0-9]";//char
+    private static final String DUCK_ID = "[a-z]+";//varname
+    private static final String DUCK_BOOL = "QUACK_QUACK|Quaak";//bool
+    private static final String WEBBED_FEET = "-?[0-9]+";//int
+    private static final String DUCK_POND_DEPTH = "[0-9]+[\\.0-9]*";//float
+    private static final String DUCK_MATH = "ADD|SUB|MUL|DIV|MOD|POW";//ADD
+    private static final String DUCK_GLOBAL = "Nest_Egg";
+    private static final String DUCK_LOCAL = "[a-zA-Z0-9]+";
     private static final String DUCK_COMMENT_SINGLE = "~QUACK.*";
     private static final String DUCK_COMMENT_MULTI = "{.*}";
-    private static final String DUCK_KEYWORD = "QUACK_PRINT|QUACK_INPUT|DUCK_INT|DUCK_BOOL|DUCK_STRING|DUCK_CHAR";
+    private static final String DUCK_KEYWORD = "QUACK_PRINT|QUACK_INPUT|DUCK_INT|DUCK_BOOL|DUCK_FLOAT|DUCK_CHAR";
 
     public DuckLangRe() {
     }
@@ -54,6 +54,8 @@ public class DuckLangRe {
 
         public static void main(String[] args) {
             ThompsonConstruction tc = new ThompsonConstruction();
+            NFA test=tc.reToNFA(DUCK_LOCAL);
+            System.out.println(testNFA(test,"Hello"));
             SubsetConstructionMethod converter = new SubsetConstructionMethod();
             DFAminimization minimizer = new DFAminimization();
 
@@ -63,6 +65,7 @@ public class DuckLangRe {
             // Map of regex patterns to token types
             Map<String, TokenType> patterns = new LinkedHashMap<>();
             patterns.put(DUCK_ID, TokenType.DUCK_ID);
+            patterns.put(DUCK_LOCAL,TokenType.DUCK_LOCAL);
             patterns.put(DUCK_BOOL, TokenType.DUCK_BOOL);
             patterns.put(WEBBED_FEET, TokenType.WEBBED_FEET);
             patterns.put(DUCK_POND_DEPTH, TokenType.DUCK_POND_DEPTH);
@@ -93,13 +96,13 @@ public class DuckLangRe {
 
             // Test the lexical analyzer with sample input
             String testInput = """
-            QUACK_PRINT hello
-            ~QUACK This is a comment
-            Nest_Egg myvar
-            QUACK_QUACK
-            ADD 123 456.789
-            {This is a
-            multiline comment}
+            DUCK_INT 1
+            DUCK_FLOAT 12.13
+           DUCK_BOOL Quaak
+           ADD 123 435
+           Nest_Egg Hello
+           QUACK_PRINT hello iqra here 
+           DUCK_CHAR A
             """;
 
             System.out.println("Testing Lexical Analyzer with input:\n" + testInput);

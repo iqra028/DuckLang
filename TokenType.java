@@ -1,5 +1,6 @@
 public enum TokenType {
     DUCK_ID,      // [a-z]+
+    DUCK_LOCAL,
     DUCK_BOOL,         // QUACK_QUACK|Quaak
     WEBBED_FEET,         // [0-9]+
     DUCK_POND_DEPTH,          // [0-9]+[\.0-9]*
