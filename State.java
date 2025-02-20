@@ -17,5 +17,6 @@ public class State {
     // Method to add a transition to another state
     public void addTransition(State nextState) {
         nextStates.add(nextState);
+
     }
 }
