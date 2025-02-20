@@ -4,12 +4,13 @@ public class Token {
     private int line;
     private int position;
 
-    public Token(TokenType type, String value) {
+    public Token(TokenType type, String value, int line, int position) {
         this.type = type;
         this.value = value;
         this.line = line;
         this.position = position;
     }
+
 
     public TokenType getType() {
         return type;

@@ -118,6 +118,21 @@ public class DuckLangRe {
                 }
             }
 
+            SymbolTable symbolTable = new SymbolTable();
+
+            // After getting tokens from lexical analyzer
+            System.out.println("Tokenizing...\n");
+            System.out.println("Tokens found:");
+            for (Token token : tokens) {
+                if (token.getType() != TokenType.WHITESPACE) {
+                    System.out.println(token);
+                    symbolTable.processToken(token);
+                }
+            }
+
+            // Print the symbol table
+            symbolTable.printSymbolTable();
+
         }
 
         private static boolean testDFA(DFA dfa, String input) {

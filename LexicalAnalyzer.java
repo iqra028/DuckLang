@@ -45,7 +45,7 @@ public class LexicalAnalyzer {
             while (position < input.length() && Character.isWhitespace(input.charAt(position))) {
                 position++;
             }
-            return new Token(TokenType.WHITESPACE, input.substring(start, position));
+            return new Token(TokenType.WHITESPACE, input.substring(start, position), line, column);
         }
 
         // Try to match each token type
@@ -67,11 +67,12 @@ public class LexicalAnalyzer {
 
         if (longestMatch > 0) {
             position += longestMatch;
-            return new Token(matchedType, matchedValue);
+            return new Token(matchedType, matchedValue, line, column);
+
         }
 
         // If no match found, consume one character as invalid token
-        return new Token(TokenType.INVALID, input.substring(position, ++position));
+        return new Token(TokenType.INVALID, input.substring(position - 1, position), line, column);
     }
 
     private int simulateDFA(DFA dfa, int startPos) {
